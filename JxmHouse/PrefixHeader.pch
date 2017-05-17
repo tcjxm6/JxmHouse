@@ -1,0 +1,41 @@
+//
+//  PrefixHeader.pch
+//  JxmHouse
+//
+//  Created by XFXB on 17/5/17.
+//  Copyright © 2017年 tcjxm6. All rights reserved.
+//
+
+#ifndef PrefixHeader_pch
+#define PrefixHeader_pch
+
+// Include any system framework and library headers here that should be included in all compilation units.
+// You will also need to set the Prefix Header build setting of one or more of your targets to reference this file.
+
+/***
+ 
+ 第三方组件
+ 
+ 
+ ***/
+
+
+
+/***
+ 
+宏定义
+ 
+ 
+ ***/
+
+#pragma -mark 系统宽高
+#define DEVICE_HEIGHT CGRectGetHeight([UIScreen mainScreen].bounds)
+#define DEVICE_WIDTH CGRectGetWidth([UIScreen mainScreen].bounds)
+
+#pragma -mark weakSelf
+#define WS(weakSelf)  __weak __typeof(&*self)weakSelf = self;
+
+#define HEXCOLOR(HEX,Alpha) [UIColor colorWithRed:((HEX>>16)&0xFF)/255.0 green:((HEX>>8)&0xFF)/255.0 blue:((HEX)&0xFF)/255.0 alpha:Alpha]
+#define RGBCOLOR(x,y,z)    [UIColor colorWithRed:x/255.0 green:y/255.0 blue:z/255.0 alpha:1.0]
+
+#endif /* PrefixHeader_pch */
