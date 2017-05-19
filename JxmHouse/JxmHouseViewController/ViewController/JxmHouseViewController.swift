@@ -12,7 +12,7 @@ import AFNetworking
 import MJRefresh
 
 
-class JxmHouseViewController: UIViewController {
+class JxmHouseViewController: UIViewController ,UITableViewDelegate,UITableViewDataSource{
 
 //    NSArray *nibContents = [[MineFrameworkHelper frameworkBundle] loadNibNamed:@"TimeChooseHeadView" owner:nil options:nil];
 //    TimeChooseHeadView *headView = [nibContents lastObject];
@@ -48,9 +48,12 @@ class JxmHouseViewController: UIViewController {
             self?.tableView.mj_header.endRefreshing()
         })
         self.headView.frame = CGRect.init(x: 0, y: 0, width: DEVICE_WIDTH, height: 68)
+        self.tableView.delegate = self
+        self.tableView.dataSource = self
         self.tableView.tableHeaderView = self.headView
+        self.tableView.register(UINib.init(nibName: "JxmHouseCell", bundle: nil), forCellReuseIdentifier: "JxmHouseCell")
         self.view.addSubview(self.tableView)
-        
+        self.tableView.reloadData()
         
     }
     
@@ -65,6 +68,17 @@ class JxmHouseViewController: UIViewController {
         
     }
 
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        return 10
+    }
+    
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        let cell : JxmHouseCell = tableView.dequeueReusableCell(withIdentifier: "JxmHouseCell") as! JxmHouseCell
+        
+        return cell
+    }
 
-
+    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
+        return 175
+    }
 }
