@@ -10,5 +10,6 @@
 #define JxmHouse_Brigding_Header_h
 //JxmHouse-Brigding-Header.h
 #import "TimeChooseHeadView.h"
+#import "DateTools.h"
 
 #endif /* JxmHouse_Brigding_Header_h */
