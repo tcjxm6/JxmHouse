@@ -49,6 +49,8 @@ class ChartView: UIView {
     var yBottomOffset : CGFloat = 20.0
     //x轴距离左边偏移量
     var xLeftOffset : CGFloat = 20.0
+    //x轴距离右边偏移量
+    var xRightOffset : CGFloat = 0.0
     //line的宽度
     var lineWidth : CGFloat = 1.0
     
@@ -62,18 +64,30 @@ class ChartView: UIView {
     //y轴lableArr
     var yLableArr : [UILabel] = []
     //y轴valueArr
-    var _yValueArr : [Double] = Array()
-    var yValueArr : [Double] {
+    var _yValueArr : [CGFloat] = Array()
+    var yValueArr : [CGFloat] {
         set {
             
             //去重
             let set1 = Set(newValue)
             //排序
-            _yValueArr = Array(set1).sorted { (a, b) -> Bool in
+            let arr = Array(set1).sorted { (a, b) -> Bool in
                 return a>b
             }
             
-            self.setBackground()
+            if _yValueArr.count == arr.count {
+                _yValueArr = arr
+                for x in 0..<_yValueArr.count {
+                    let lable = self.yLableArr[x]
+                    lable.text = String.init(format: "%.0f", _yValueArr[x])
+                }
+            }
+            else {
+                _yValueArr = arr
+                self.setBackground()
+            }
+            
+            
         }
         
         get{
@@ -90,15 +104,46 @@ class ChartView: UIView {
             return _xValueArr
         }
         set {
-            _xValueArr = newValue
-            self.setXValueLable()
+            if _xValueArr.count == newValue.count {
+                _xValueArr = newValue
+                for x in 0..<_xValueArr.count {
+                    let lable = self.xLableArr[x]
+                    lable.text = _xValueArr[x]
+                }
+            }
+            else {
+                _xValueArr = newValue
+                self.setXValueLable()
+                self.drawPath()
+            }
         }
     }
+    //x轴pointValueArr
+    
+    var _pointValueArr : Dictionary<String, Any> = Dictionary()
+    var pointValueArr : Dictionary<String, Any> {
+        set {
+            _pointValueArr = newValue
+//            self.setPointData()
+//            self.drawPath()
+        }
+        get{return _pointValueArr}
+    }
+    
     //底部竖线的layerArr
     var bottomLineArr : [CALayer] = []
     
+    //画线layer
+    let drawPathLayer : CAShapeLayer = CAShapeLayer()
+    //渐变色layer
+    let gradientLayer : CAGradientLayer = CAGradientLayer()
+    
+    //画线点位置arr
+    private var pointArr : [CGPoint] = []
+    
     required init?(coder aDecoder: NSCoder) {
         super.init(coder: aDecoder)
+        self.layer.addSublayer(self.drawPathLayer)
     }
     
     override func layoutSubviews() {
@@ -106,6 +151,10 @@ class ChartView: UIView {
         if(self.width != self.frame.size.width && self.height != self.frame.size.height) {
             self.width = self.frame.size.width
             self.height = self.frame.size.height
+            self.drawPathLayer.frame = CGRect.init(x: self.xLeftOffset, y: self.yTopOffset, width: self.width - self.xLeftOffset - self.xRightOffset, height: self.height - self.yTopOffset - self.yBottomOffset)
+            self.drawPathLayer.fillColor = UIColor.clear.cgColor
+            self.drawPathLayer.strokeColor = HEXCOLOR(0xcccccc).cgColor
+            
             self.setBackground()
         }
         
@@ -163,7 +212,9 @@ class ChartView: UIView {
         
         self.setYValueLable()
         self.setXValueLable()
-        
+        self.setPointData()
+        self.drawPath()
+        self.layer.addSublayer(self.drawPathLayer)
         self.setData(self.dataDic ?? NSDictionary.init())
     }
     
@@ -237,7 +288,93 @@ class ChartView: UIView {
         }
     }
     
+    func drawPath() {
+        
+        let path = UIBezierPath()
+        path.lineWidth = 2.0
+        path.lineCapStyle = .round
+        path.lineJoinStyle = .round
+        
+        let zero : CGFloat = self.height - self.yBottomOffset - self.yTopOffset
+        var lastPoint : CGPoint = CGPoint()
+        path.move(to: CGPoint.init(x: 0, y: zero))
+        for point in self.pointArr {
+            path.addLine(to: point)
+            lastPoint = point
+        }
+        path.addLine(to: CGPoint.init(x: lastPoint.x, y: zero))
+        path.move(to:  CGPoint.init(x: 0, y: zero))
+        path.close()
+        
+        let maskLayer = CAShapeLayer()
+        maskLayer.path = path.cgPath
+        
+        self.drawPathLayer.path = path.cgPath
+//        self.drawPathLayer.fillColor = UIColor.blue.cgColor
+        
+        self.gradientLayer.removeFromSuperlayer()
+        
+        //增加渐变色
+        self.gradientLayer.frame = self.drawPathLayer.frame
+        self.gradientLayer.colors = [HEXCOLOR(0x867866).cgColor,UIColor.white.cgColor]
+        self.gradientLayer.locations = [0.1,0.9]
+        self.gradientLayer.startPoint = CGPoint.init(x: 0, y: 0)
+        self.gradientLayer.endPoint = CGPoint.init(x: 0, y: 1)
+        self.layer.addSublayer(gradientLayer)
+        self.gradientLayer.mask = maskLayer
+        
+    }
     
+    func setPointData() {
+
+        //如果没有x轴坐标值，则返回
+        guard self.xValueArr.count > 0 else {
+            return
+        }
+        
+        self.pointArr.removeAll()
+        
+        //设置x轴屏幕y坐标
+        let zero : CGFloat = self.height - self.yBottomOffset - self.yTopOffset + 1
+        //设置每组数据对应的宽度
+        let partWidth : CGFloat = (self.width - self.xLeftOffset - self.xRightOffset) / CGFloat(self.xValueArr.count)
+        //y轴最大值和最小值
+        var yMax : CGFloat = 0.0
+        var yMin : CGFloat = 0.0
+        if self.yValueArr.count > 1 {
+            yMin = self.yValueArr[self.yValueArr.count - 1]
+            yMax = self.yValueArr[0]
+        }
+        
+
+        //遍历x轴的值，并将对应的值算出坐标点的信息
+        for x in 0..<self.xValueArr.count {
+            var xPoint : CGFloat = CGFloat(x) * partWidth
+            let key = self.xValueArr[x]
+            let valueArr  = self.pointValueArr[key] as? Array<Double>
+            //遍历每个x段的值，并将每个值计算出point点保存
+            if let valueArr = valueArr {
+                
+                let valuePartWidth = partWidth / CGFloat(valueArr.count)
+                for value in valueArr {
+                    let y : CGFloat = (1.0 - (CGFloat(value)-yMin) / (yMax - yMin)) * zero
+                    self.pointArr.append(CGPoint.init(x: xPoint, y: y))
+                    xPoint += valuePartWidth
+                    if valueArr.count == 1 {
+                        self.pointArr.append(CGPoint.init(x: xPoint, y: y))
+                    }
+                }
+                
+            }
+            //解包失败则赋0值
+            else{
+                self.pointArr.append(CGPoint.init(x: xPoint, y: zero))
+                xPoint += partWidth
+                self.pointArr.append(CGPoint.init(x: xPoint, y: zero))
+            }
+            
+        }
+    }
     
     func getLine(direction:Direction , origin : CGPoint , length : CGFloat , color : UIColor) -> CAShapeLayer{
         let layer = CAShapeLayer()

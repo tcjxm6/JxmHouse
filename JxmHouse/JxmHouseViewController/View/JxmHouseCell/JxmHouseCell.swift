@@ -24,6 +24,8 @@ class JxmHouseCell: UITableViewCell {
         self.chartView.layer.shadowRadius = 4
         self.chartView.yValueArr = [2.0,2.0,3.0,1.0,4.0,5.0]
         self.chartView.xValueArr = ["05-17","05-18","05-19","05-20"]
+        self.chartView.pointValueArr = ["05-17":[3.0],"05-18":[3.0],"05-19":[3.0],"05-20":[3.0]]
+        
     }
 
     override func setSelected(_ selected: Bool, animated: Bool) {

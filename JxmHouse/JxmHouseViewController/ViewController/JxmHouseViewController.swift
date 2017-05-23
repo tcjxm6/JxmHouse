@@ -10,6 +10,7 @@ import UIKit
 import Alamofire
 import AFNetworking
 import MJRefresh
+import MJExtension
 
 
 class JxmHouseViewController: UIViewController ,UITableViewDelegate,UITableViewDataSource{
@@ -60,12 +61,44 @@ class JxmHouseViewController: UIViewController ,UITableViewDelegate,UITableViewD
     func initOther() {
         
         self.title = "深圳·楼盘"
-        
+        self.refreshData()
     }
     
     func refreshData() {
         self.page = 1
+        self.downloadData(page: self.page)
+    }
+    
+    func downloadData(page:Int) {
+        let parameters : Parameters = ["beginTime":"2017-05-10 00:00:00",
+                                       "endTime":"2017-05-22 23:59:59",
+                                       "size":20,
+                                       "page":1,
+                                       "city":"深圳市",
+                                       "sort":"price",]
         
+        
+        Alamofire.request( "http://tcjxm6.xyz:8000/queryTop100/", method: .post, parameters: parameters, encoding: JSONEncoding.default).responseJSON { (responds) in
+            let val = responds.result.value as! NSDictionary?
+            let data = val?.object(forKey: "data") as? NSArray ?? []
+
+            for modelDic in data {
+                let model : HouseModel = HouseModel.mj_object(withKeyValues: modelDic)
+                var dateArr = model.avg_prices.allKeys
+
+                dateArr.sort(by: { (a , b) -> Bool in
+
+                    let dateformatter = DateFormatter()
+                    dateformatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
+                    let date : Date! = dateformatter.date(from: a as! String)
+                    let date2 : Date! = dateformatter.date(from: b as! String)
+                    let result : Bool = date.compare(date2) == .orderedAscending
+                    return result
+                })
+
+            }
+
+        }
     }
 
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
