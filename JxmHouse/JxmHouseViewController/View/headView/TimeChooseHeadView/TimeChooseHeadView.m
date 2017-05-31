@@ -39,6 +39,8 @@
     self.endTextField = [UITextField new];
     self.beginTextField.text = [dateFormatter stringFromDate:[NSDate date]];
     self.endTextField.text = [dateFormatter stringFromDate:[NSDate date]];
+    self.beginTime = [NSString stringWithFormat:@"%@ 00:00:00",self.beginTextField.text];
+    self.endTime = [NSString stringWithFormat:@"%@ 23:59:59",self.endTextField.text];
     
     [super awakeFromNib];
 }
@@ -112,6 +114,8 @@
         ws.beginTextField.text = _begin;
         NSString *_end = [end stringByReplacingOccurrencesOfString:@"." withString:@"-"];
         ws.endTextField.text = _end;
+        self.beginTime = [NSString stringWithFormat:@"%@ 00:00:00",_begin];
+        self.endTime = [NSString stringWithFormat:@"%@ 23:59:59",_end];
         if (ws.callback) {
             ws.callback(_begin,_end);
         }

@@ -11,6 +11,7 @@ import Alamofire
 import AFNetworking
 import MJRefresh
 import MJExtension
+import ReactiveSwift
 
 
 class JxmHouseViewController: UIViewController ,UITableViewDelegate,UITableViewDataSource{
@@ -24,6 +25,8 @@ class JxmHouseViewController: UIViewController ,UITableViewDelegate,UITableViewD
     let tableView : UITableView = UITableView()
     let headView : TimeChooseHeadView = Bundle.main.loadNibNamed("TimeChooseHeadView", owner: nil, options: nil)?.last as! TimeChooseHeadView
     var page : Int = 1
+    //cellModelArr
+    var dataArr : [HouseModel] = []
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -41,13 +44,24 @@ class JxmHouseViewController: UIViewController ,UITableViewDelegate,UITableViewD
     
     func initView() {
 
+        self.headView.callback = { [weak self](beginTime,endTime) in
+            self?.refreshData()
+        }
         self.tableView.frame = CGRect.init(x: 0, y: 0, width: DEVICE_WIDTH, height: DEVICE_HEIGHT)
         self.tableView.backgroundColor = UIColor.white
-        self.tableView.mj_header = MJRefreshStateHeader.init(refreshingBlock: { 
+        self.tableView.mj_header = MJRefreshStateHeader.init(refreshingBlock: {
             [weak self] in
             self?.refreshData()
-            self?.tableView.mj_header.endRefreshing()
+            
         })
+        
+        self.tableView.mj_footer = MJRefreshAutoStateFooter.init(refreshingBlock: {
+            [weak self] in
+            self?.page += 1
+            let page = self?.page ?? 1
+            self?.downloadData(page: page)
+        })
+        self.tableView.mj_footer.isAutomaticallyHidden = true
         self.headView.frame = CGRect.init(x: 0, y: 0, width: DEVICE_WIDTH, height: 68)
         self.tableView.delegate = self
         self.tableView.dataSource = self
@@ -66,52 +80,52 @@ class JxmHouseViewController: UIViewController ,UITableViewDelegate,UITableViewD
     
     func refreshData() {
         self.page = 1
+        self.dataArr.removeAll()
         self.downloadData(page: self.page)
     }
     
     func downloadData(page:Int) {
-        let parameters : Parameters = ["beginTime":"2017-05-10 00:00:00",
-                                       "endTime":"2017-05-22 23:59:59",
+        let parameters : Parameters = ["beginTime":self.headView.beginTime,
+                                       "endTime":self.headView.endTime,
                                        "size":20,
-                                       "page":1,
+                                       "page":page,
                                        "city":"深圳市",
-                                       "sort":"price",]
+                                       "sort":"regionalism_name",]
         
         
+        weak var weakSelf = self
         Alamofire.request( "http://tcjxm6.xyz:8000/queryTop100/", method: .post, parameters: parameters, encoding: JSONEncoding.default).responseJSON { (responds) in
+            
             let val = responds.result.value as! NSDictionary?
             let data = val?.object(forKey: "data") as? NSArray ?? []
 
             for modelDic in data {
                 let model : HouseModel = HouseModel.mj_object(withKeyValues: modelDic)
-                var dateArr = model.avg_prices.allKeys
-
-                dateArr.sort(by: { (a , b) -> Bool in
-
-                    let dateformatter = DateFormatter()
-                    dateformatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
-                    let date : Date! = dateformatter.date(from: a as! String)
-                    let date2 : Date! = dateformatter.date(from: b as! String)
-                    let result : Bool = date.compare(date2) == .orderedAscending
-                    return result
-                })
+                let begin : NSDate = NSDate.init(string: weakSelf?.headView.beginTime, formatString: "yyyy-MM-dd HH:mm:ss")
+                let end : NSDate = NSDate.init(string: weakSelf?.headView.endTime, formatString: "yyyy-MM-dd HH:mm:ss")
+                model.setXTitle(beginTime: begin , endTime: end)
+                weakSelf?.dataArr.append(model)
 
             }
-
+            
+            weakSelf?.tableView.reloadData()
+            weakSelf?.tableView.mj_header.endRefreshing()
+            weakSelf?.tableView.mj_footer.endRefreshing()
         }
     }
 
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return 10
+        return self.dataArr.count
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell : JxmHouseCell = tableView.dequeueReusableCell(withIdentifier: "JxmHouseCell") as! JxmHouseCell
-        
+        let model : HouseModel = self.dataArr[indexPath.row]
+        cell.setData(model: model)
         return cell
     }
 
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
-        return 175
+        return 200
     }
 }

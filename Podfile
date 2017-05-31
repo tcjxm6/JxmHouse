@@ -9,6 +9,7 @@ target 'JxmHouse' do
     pod 'Masonry'
     pod 'ReactiveCocoa'
     pod 'MJExtension'
+    pod 'JPush'
 end
 
 

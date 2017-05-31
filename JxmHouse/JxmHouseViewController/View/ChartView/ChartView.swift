@@ -48,7 +48,7 @@ class ChartView: UIView {
     //y轴距离底部偏移量
     var yBottomOffset : CGFloat = 20.0
     //x轴距离左边偏移量
-    var xLeftOffset : CGFloat = 20.0
+    var xLeftOffset : CGFloat = 30.0
     //x轴距离右边偏移量
     var xRightOffset : CGFloat = 0.0
     //line的宽度
@@ -79,7 +79,11 @@ class ChartView: UIView {
                 _yValueArr = arr
                 for x in 0..<_yValueArr.count {
                     let lable = self.yLableArr[x]
-                    lable.text = String.init(format: "%.0f", _yValueArr[x])
+                    let nf = NumberFormatter()
+                    nf.numberStyle = .decimal
+                    nf.maximumFractionDigits = 2
+                    nf.minimumFractionDigits = 1
+                    lable.text = nf.string(from: NSNumber.init(value: Double(_yValueArr[x])))
                 }
             }
             else {
@@ -124,8 +128,8 @@ class ChartView: UIView {
     var pointValueArr : Dictionary<String, Any> {
         set {
             _pointValueArr = newValue
-//            self.setPointData()
-//            self.drawPath()
+            self.setPointData()
+            self.drawPath()
         }
         get{return _pointValueArr}
     }
@@ -229,14 +233,17 @@ class ChartView: UIView {
         
         for x in 0..<self.yValueArr.count {
             let lable = UILabel()
-            lable.frame = CGRect.init(x: 0, y: y, width: 1, height: 1)
-            lable.text = String.init(format: "%.0lf", arguments: [self.yValueArr[x]])
-            lable.sizeToFit()
+            lable.frame = CGRect.init(x: 0, y: y, width: 1, height: 20)
+            let nf = NumberFormatter()
+            nf.numberStyle = .decimal
+            nf.maximumFractionDigits = 2
+            nf.minimumFractionDigits = 1
+            lable.text = nf.string(from: NSNumber.init(value: Double(_yValueArr[x])))
             var rect = lable.frame
             rect.origin.x = 0
             rect.origin.y = y - rect.size.height / 2
             rect.size.width = self.xLeftOffset
-            lable.font = UIFont.systemFont(ofSize: 13)
+            lable.font = UIFont.systemFont(ofSize: 12)
             lable.textAlignment = .center
             lable.frame = rect
             lable.textColor = HEXCOLOR(0x333333)
@@ -316,10 +323,12 @@ class ChartView: UIView {
         
         //增加渐变色
         self.gradientLayer.frame = self.drawPathLayer.frame
-        self.gradientLayer.colors = [HEXCOLOR(0x867866).cgColor,UIColor.white.cgColor]
-        self.gradientLayer.locations = [0.1,0.9]
-        self.gradientLayer.startPoint = CGPoint.init(x: 0, y: 0)
-        self.gradientLayer.endPoint = CGPoint.init(x: 0, y: 1)
+        let color1 : UIColor = UIColor.init(red: 177/255, green: 193/255, blue: 214/255, alpha: 0.5)
+        let color2 : UIColor = UIColor.init(red: 96/255, green: 124/255, blue: 163/255, alpha: 0.5)
+        self.gradientLayer.colors = [HEXCOLOR(0xFFFFFF,alpha: 0.5).cgColor,color1.cgColor,color2.cgColor]
+        self.gradientLayer.locations = [0.0,0.3,0.95]
+        self.gradientLayer.startPoint = CGPoint.init(x: 0, y: 1)
+        self.gradientLayer.endPoint = CGPoint.init(x: 0, y: 0)
         self.layer.addSublayer(gradientLayer)
         self.gradientLayer.mask = maskLayer
         

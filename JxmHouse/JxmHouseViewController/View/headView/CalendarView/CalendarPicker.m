@@ -9,6 +9,7 @@
 #import "CalendarPicker.h"
 #import "CalendarCell.h"
 
+
 @interface CalendarPicker ()<UICollectionViewDataSource,UICollectionViewDelegate,UICollectionViewDelegateFlowLayout,DayViewClickEventDelegate>
 
 
@@ -71,19 +72,27 @@
 {
     NSMutableArray *arr = [NSMutableArray new];
     
-    NSDate *begin = self.beginDate;
-    
+//    NSDate *begin = self.beginDate;
+    NSDate *end = self.endDate;
     if ([self.beginDate isLaterThan:self.endDate]) {
         return;
     }
     
-    while ([begin isEarlierThanOrEqualTo:self.endDate]) {
-        CalendarMonthModel *model = [[CalendarMonthModel alloc] initWithDate:begin];
+    while ([end isLaterThanOrEqualTo:self.beginDate]) {
+        CalendarMonthModel *model = [[CalendarMonthModel alloc] initWithDate:end];
         
         [arr addObject:model];
         
-        begin = [begin dateByAddingMonths:1];
+        end = [end dateBySubtractingMonths:1];
     }
+    
+//    while ([begin isEarlierThanOrEqualTo:self.endDate]) {
+//        CalendarMonthModel *model = [[CalendarMonthModel alloc] initWithDate:begin];
+//        
+//        [arr addObject:model];
+//        
+//        begin = [begin dateByAddingMonths:1];
+//    }
 
     
     self.calendarDataArray = arr.copy;
